@@ -83,25 +83,17 @@ case $AMPLIFY_COMMAND in
     ;;
 
   delete)
-    sh -c '
-      DELETE_OUTPUT=$(aws amplify delete-branch --app-id='"${AmplifyAppId}"' --branch-name='"$BRANCH_NAME"' --region='"${AWS_REGION}"' 2>&1) || true
-      if echo "$DELETE_OUTPUT" | grep -q "NotFoundException"; then
-        echo "Branch '"$BRANCH_NAME"' not found — skipping deletion"
-        exit 99
-      elif [ -n "$DELETE_OUTPUT" ]; then
-        echo "Error deleting branch: $DELETE_OUTPUT"
-        exit 1
-      else
-        echo "Branch '"$BRANCH_NAME"' deleted successfully"
-      fi
-    '
-    EXIT_CODE=$?
+    DELETE_OUTPUT=$(sh -c 'aws amplify delete-branch --app-id="'"$AmplifyAppId"'" --branch-name="'"$BRANCH_NAME"'" --region="'"$AWS_REGION"'" 2>&1 || true')
 
-    if [ "$EXIT_CODE" -eq 99 ]; then
-      echo "Skipping comment because branch did not exist"
+    if echo "$DELETE_OUTPUT" | grep -q "NotFoundException"; then
+      echo "Branch $BRANCH_NAME not found — skipping deletion"
       SKIP_COMMENT=1
+    elif [ -n "$DELETE_OUTPUT" ]; then
+      echo "Error deleting branch: $DELETE_OUTPUT"
+      exit 1
+    else
+      echo "Branch $BRANCH_NAME deleted successfully"
     fi
-    # sh -c "aws amplify delete-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME --region=${AWS_REGION}"
     ;;
 
   *)
