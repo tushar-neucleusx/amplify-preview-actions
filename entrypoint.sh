@@ -5,6 +5,28 @@ set -e
 BRANCH_NAME=$1
 AMPLIFY_COMMAND=$2
 COMMENT_URL=$3
+STAGE=$4
+
+if [[ -z "$STAGE" ]]; then
+  if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+    STAGE="PULL_REQUEST"
+  elif [[ "${GITHUB_REF_NAME}" == "refs/heads/main" || "${GITHUB_REF_NAME}" == "main" ]]; then
+    STAGE="PRODUCTION"
+  else
+    STAGE="DEVELOPMENT"
+  fi
+fi
+
+STAGE="${STAGE^^}"
+
+case "$STAGE" in
+  PRODUCTION|BETA|DEVELOPMENT|EXPERIMENTAL|PULL_REQUEST)
+    app_stage="--stage=$STAGE"
+    ;;
+  *)
+    app_stage="--stage=PRODUCTION"
+    ;;
+esac
 
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] ; then
   echo "You must provide the action with both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables in order to deploy"
@@ -53,7 +75,7 @@ case $AMPLIFY_COMMAND in
 
   deploy)
     sh -c "aws amplify create-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME  \
-              ${backend_env_arg} ${environment_variables_arg} --region=${AWS_REGION}"
+              ${backend_env_arg} ${environment_variables_arg} --region=${AWS_REGION} ${app_stage}"
 
     sleep 10
 
