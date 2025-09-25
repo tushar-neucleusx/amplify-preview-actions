@@ -100,9 +100,19 @@ null
 text
 EOF
 
-if [ -z "$GITHUB_TOKEN" ] ; then
+if [ -z "$GITHUB_TOKEN" ]; then
   echo "Skipping comment as GITHUB_TOKEN not provided"
-else 
-  SUBDOMAIN_NAME=$(echo $BRANCH_NAME | sed 's/[^a-zA-Z0-9-]/-/')
-  curl -X POST $COMMENT_URL -H "Content-Type: application/json" -H "Authorization: token $GITHUB_TOKEN" --data '{ "body": "'"Preview branch generated at https://$SUBDOMAIN_NAME.${AmplifyAppId}.amplifyapp.com"'" }'
+else
+  SUBDOMAIN_NAME=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9-]/-/')
+  
+  if [ "$AMPLIFY_COMMAND" = "deploy" ]; then
+    BODY="Preview branch generated at https://$SUBDOMAIN_NAME.${AmplifyAppId}.amplifyapp.com (stage: $STAGE)"
+  else
+    BODY="Preview branch deleted for https://$SUBDOMAIN_NAME.${AmplifyAppId}.amplifyapp.com (stage: $STAGE)"
+  fi
+
+  curl -X POST "$COMMENT_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: token $GITHUB_TOKEN" \
+    --data "{ \"body\": \"$BODY\" }"
 fi
