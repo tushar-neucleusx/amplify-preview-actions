@@ -7,17 +7,17 @@ AMPLIFY_COMMAND=$2
 COMMENT_URL=$3
 STAGE=$4
 
-if [[ -z "$STAGE" ]]; then
-  if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+if [ -z "$STAGE" ]; then
+  if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
     STAGE="PULL_REQUEST"
-  elif [[ "${GITHUB_REF_NAME}" == "refs/heads/main" || "${GITHUB_REF_NAME}" == "main" ]]; then
+  elif [ "${GITHUB_REF_NAME}" = "refs/heads/main" ] || [ "${GITHUB_REF_NAME}" = "main" ]; then
     STAGE="PRODUCTION"
   else
     STAGE="DEVELOPMENT"
   fi
 fi
 
-STAGE="${STAGE^^}"
+STAGE=$(echo "$STAGE" | tr '[:lower:]' '[:upper:]')
 
 case "$STAGE" in
   PRODUCTION|BETA|DEVELOPMENT|EXPERIMENTAL|PULL_REQUEST)
