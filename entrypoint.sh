@@ -88,7 +88,7 @@ case $AMPLIFY_COMMAND in
     if echo "$DELETE_OUTPUT" | grep -q "NotFoundException"; then
       echo "Branch $BRANCH_NAME not found — skipping deletion"
       SKIP_COMMENT=1
-    elif [ -n "$DELETE_OUTPUT" ]; then
+    elif echo "$DELETE_OUTPUT" | grep -q '"error"'; then
       echo "Error deleting branch: $DELETE_OUTPUT"
       exit 1
     else
