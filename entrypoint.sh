@@ -83,7 +83,25 @@ case $AMPLIFY_COMMAND in
     ;;
 
   delete)
-    sh -c "aws amplify delete-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME --region=${AWS_REGION}"
+    sh -c '
+      DELETE_OUTPUT=$(aws amplify delete-branch --app-id='"${AmplifyAppId}"' --branch-name='"$BRANCH_NAME"' --region='"${AWS_REGION}"' 2>&1) || true
+      if echo "$DELETE_OUTPUT" | grep -q "NotFoundException"; then
+        echo "Branch '"$BRANCH_NAME"' not found — skipping deletion"
+        exit 99
+      elif [ -n "$DELETE_OUTPUT" ]; then
+        echo "Error deleting branch: $DELETE_OUTPUT"
+        exit 1
+      else
+        echo "Branch '"$BRANCH_NAME"' deleted successfully"
+      fi
+    '
+    EXIT_CODE=$?
+
+    if [ "$EXIT_CODE" -eq 99 ]; then
+      echo "Skipping comment because branch did not exist"
+      SKIP_COMMENT=1
+    fi
+    # sh -c "aws amplify delete-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME --region=${AWS_REGION}"
     ;;
 
   *)
@@ -102,7 +120,7 @@ EOF
 
 if [ -z "$GITHUB_TOKEN" ]; then
   echo "Skipping comment as GITHUB_TOKEN not provided"
-else
+elif [ -z "$SKIP_COMMENT" ]; then
   SUBDOMAIN_NAME=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9-]/-/')
   
   if [ "$AMPLIFY_COMMAND" = "deploy" ]; then
