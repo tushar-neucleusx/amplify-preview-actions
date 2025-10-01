@@ -74,12 +74,19 @@ EOF
 case $AMPLIFY_COMMAND in
 
   deploy)
-    sh -c "aws amplify create-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME  \
-              ${backend_env_arg} ${environment_variables_arg} --region=${AWS_REGION} ${app_stage}"
+    EXISTING_BRANCH=$(sh -c 'aws amplify get-branch --app-id="${AmplifyAppId}" --branch-name="$BRANCH_NAME" --region="${AWS_REGION}" 2>&1 || true')
 
-    sleep 10
+    if echo "$EXISTING_BRANCH" | grep -q '"branch"'; then
+      echo "Branch $BRANCH_NAME already exists — skipping create and deploy"
+      SKIP_COMMENT=1
+    else
+      sh -c "aws amplify create-branch --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME  \
+                ${backend_env_arg} ${environment_variables_arg} --region=${AWS_REGION} ${app_stage}"
 
-    sh -c "aws amplify start-job --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME --job-type=RELEASE --region=${AWS_REGION}"
+      sleep 10
+
+      sh -c "aws amplify start-job --app-id=${AmplifyAppId} --branch-name=$BRANCH_NAME --job-type=RELEASE --region=${AWS_REGION}"
+    fi
     ;;
 
   delete)
